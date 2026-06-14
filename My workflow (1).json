@@ -1,0 +1,546 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "Eres un asistente de Google Calendar y clientes. Responde siempre en español, de forma breve, clara y sin inventar datos.\n\nREGLAS GENERALES\n- Usa únicamente las herramientas necesarias para la solicitud actual.\n- Solicita los datos obligatorios faltantes antes de ejecutar acciones.\n- Usa la zona horaria America/Bogota.\n- Si una herramienta devuelve vacío, significa 0 resultados; no repitas la consulta.\n- No uses herramientas que no estén relacionadas con la solicitud.\n\nEVENTOS\n- Para crear: calcula End desde Start y duración; usa 60 minutos si no indican duración.\n- Consulta Availability exactamente una vez usando el mismo Start y End.\n- Si está ocupado, no crees el evento y solicita otra hora.\n- Usa 30 minutos de recordatorio si el usuario no indica otro valor.\n- NUNCA agregues asistentes (attendees) al crear eventos. Deja el campo de asistentes completamente vacío.\n- Solo agrega asistentes si el usuario proporciona correos electrónicos válidos de forma explícita (ej: usuario@ejemplo.com).\n- Para consultar agenda o contar citas, usa Get Many una sola vez.\n- Para tiempo libre, usa Get Many una vez y calcula hasta el próximo evento.\n- Para horarios libres, sugiere máximo 3 opciones y espera confirmación antes de crear.\n- Identifica correctamente los eventos antes de modificarlos.\n- Para ELIMINAR un evento: primero usa Get Many Events para buscar el evento por título, fecha u otros detalles que mencione el usuario. Obtén el Event ID del resultado y luego usa Delete. NUNCA pidas al usuario el Event ID directamente.\n- Pide confirmación antes de eliminar.\n\nCLIENTES\n- Para guardar o buscar clientes, usa solamente Data Table; no consultes Calendar.\n- Realiza máximo una consulta y una escritura en Data Table por solicitud.\n- Guarda únicamente nombre, correo, teléfono y notas proporcionados explícitamente.\n- Busca por nombre, correo o teléfono antes de insertar.\n- No inventes datos ni guardes duplicados.\n- Si existen varias coincidencias, solicita aclaración."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        272,
+        -32
+      ],
+      "id": "47fb3579-e72b-4e47-8934-ba41956549a4",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {
+          "maxTokens": 1000,
+          "reasoningEffort": "low"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -240,
+        192
+      ],
+      "id": "9bf4fe4b-767a-476c-8478-d2988d572511",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "r53jhtfHoo4vW91S",
+          "name": "n8n free OpenAI API credits"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "ajuanjosesepulveda@gmail.com",
+          "mode": "list",
+          "cachedResultName": "ajuanjosesepulveda@gmail.com"
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', ``, 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', ``, 'string') }}",
+        "useDefaultReminders": false,
+        "additionalFields": {
+          "conferenceDataUi": {},
+          "description": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Description', ``, 'string') }}",
+          "summary": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Summary', ``, 'string') }}"
+        },
+        "remindersUi": {
+          "remindersValues": [
+            {
+              "method": "popup",
+              "minutes": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('reminder_minutes', 'Minutos antes del evento para el recordatorio (ej: 30, 60, 120)', 'number') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        16,
+        192
+      ],
+      "id": "ea078631-a98b-4770-bc26-d3cca97bb9fe",
+      "name": "Create an event in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "k9cNSUrB0oAW4OtB",
+          "name": "Google Calendar OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "contextWindowLength": 1
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        -112,
+        192
+      ],
+      "id": "c7a5b4a9-9f11-4002-9e0e-dc69f5378e58",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "actualizar un evento en google calendario. se espera el **Event id** y los nuevos tiempos de recordatorio en minutos (ej: 30, 60, 120) si lo requiere",
+        "operation": "update",
+        "calendar": {
+          "__rl": true,
+          "value": "ajuanjosesepulveda@gmail.com",
+          "mode": "list",
+          "cachedResultName": "ajuanjosesepulveda@gmail.com"
+        },
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', ``, 'string') }}",
+        "useDefaultReminders": false,
+        "updateFields": {},
+        "remindersUi": {
+          "remindersValues": [
+            {
+              "method": "popup",
+              "minutes": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('reminder_minutes', 'Minutos antes del evento para el recordatorio (ej: 30, 60, 120)', 'number') }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        144,
+        192
+      ],
+      "id": "b776342e-1d1b-4e4a-91ca-465b423ea522",
+      "name": "Update an event in Google Calendar1",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "k9cNSUrB0oAW4OtB",
+          "name": "Google Calendar OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Eliminar un evento del calendario. El usuario puede mencionar el título del evento, la fecha/hora, o cualquier detalle que identifique el evento a eliminar. Primero busca el evento usando Get Many Events para obtener el Event ID, luego elimínalo.",
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "value": "ajuanjosesepulveda@gmail.com",
+          "mode": "list",
+          "cachedResultName": "ajuanjosesepulveda@gmail.com"
+        },
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', `ID del evento obtenido de Get Many Events`, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        272,
+        192
+      ],
+      "id": "b74d7f36-4ba7-4dbc-961b-c538086fe513",
+      "name": "Delete an event in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "k9cNSUrB0oAW4OtB",
+          "name": "Google Calendar OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "value": "0lNJavBBVYppalxQ",
+          "mode": "list",
+          "cachedResultName": "whatsapp agente n8n calendario",
+          "cachedResultUrl": "/projects/3UBvoDWx6Fpf3La0/datatables/0lNJavBBVYppalxQ"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "titulo_evento",
+              "condition": "ilike",
+              "keyValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('conditions0_Value', ``, 'string') }}"
+            },
+            {
+              "keyName": "nombre",
+              "condition": "ilike",
+              "keyValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('conditions1_Value', ``, 'string') }}"
+            },
+            {
+              "keyName": "telefono",
+              "keyValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('conditions2_Value', ``, 'string') }}"
+            },
+            {
+              "keyName": "correo",
+              "condition": "ilike",
+              "keyValue": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('conditions3_Value', ``, 'string') }}"
+            }
+          ]
+        },
+        "limit": 5
+      },
+      "type": "n8n-nodes-base.dataTableTool",
+      "typeVersion": 1.1,
+      "position": [
+        400,
+        192
+      ],
+      "id": "be229a98-478d-491a-8589-61b6f107f20a",
+      "name": "Get row(s) in Data table"
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "0lNJavBBVYppalxQ",
+          "mode": "list",
+          "cachedResultName": "whatsapp agente n8n calendario",
+          "cachedResultUrl": "/projects/3UBvoDWx6Fpf3La0/datatables/0lNJavBBVYppalxQ"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id_calendario": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('id_calendario', ``, 'string') }}",
+            "titulo_evento": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('titulo_evento', ``, 'string') }}",
+            "nombre": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('nombre', ``, 'string') }}",
+            "correo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('correo', ``, 'string') }}",
+            "telefono": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('telefono', ``, 'string') }}",
+            "notas": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('notas', ``, 'string') }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "id_calendario",
+              "displayName": "id_calendario",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "titulo_evento",
+              "displayName": "titulo_evento",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "nombre",
+              "displayName": "nombre",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "correo",
+              "displayName": "correo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "telefono",
+              "displayName": "telefono",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "notas",
+              "displayName": "notas",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTableTool",
+      "typeVersion": 1.1,
+      "position": [
+        528,
+        192
+      ],
+      "id": "a0f9f46d-2add-47a1-8afc-13e6bb004e2c",
+      "name": "Insert row in Data table"
+    },
+    {
+      "parameters": {
+        "public": true,
+        "options": {
+          "responseMode": "lastNode"
+        }
+      },
+      "id": "e5bea893-2358-4a6d-8224-1e838345d45e",
+      "name": "When chat message received",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -464,
+        -32
+      ],
+      "webhookId": "ec930c7a-5400-495a-8efe-80e01b6c565c",
+      "alwaysOutputData": false,
+      "executeOnce": false,
+      "retryOnFail": false,
+      "notesInFlow": false
+    },
+    {
+      "parameters": {
+        "resource": "calendar",
+        "calendar": {
+          "__rl": true,
+          "value": "ajuanjosesepulveda@gmail.com",
+          "mode": "list",
+          "cachedResultName": "ajuanjosesepulveda@gmail.com"
+        },
+        "timeMin": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start_Time', ``, 'string') }}",
+        "timeMax": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End_Time', ``, 'string') }}",
+        "options": {
+          "outputFormat": "availability"
+        }
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        656,
+        192
+      ],
+      "id": "9c1f43ed-df8d-49bf-9855-0030a3a032f5",
+      "name": "Get availability in a calendar in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "k9cNSUrB0oAW4OtB",
+          "name": "Google Calendar OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "ajuanjosesepulveda@gmail.com",
+          "mode": "list",
+          "cachedResultName": "ajuanjosesepulveda@gmail.com"
+        },
+        "limit": 10,
+        "timeMin": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('After', ``, 'string') }}",
+        "timeMax": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Before', ``, 'string') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        784,
+        192
+      ],
+      "id": "815392a1-08a6-40e7-906c-9b964c327c90",
+      "name": "Get many events in Google Calendar",
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "k9cNSUrB0oAW4OtB",
+          "name": "Google Calendar OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        912,
+        192
+      ],
+      "id": "cd23f5c4-4be0-498e-922c-b7e2c0b5f89c",
+      "name": "Calculator"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        []
+      ]
+    },
+    "Create an event in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update an event in Google Calendar1": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete an event in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in Data table": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert row in Data table": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get availability in a calendar in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many events in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculator": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "versionId": "40be1eff-445b-4fc8-b18f-b70b14fead29",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "7dd8bee23ad360dc6dcd845897dd70dfa4459dbc75290f17f906798465ffdd19"
+  },
+  "nodeGroups": [],
+  "id": "Ub6E4VOv2QTZFbxJ",
+  "tags": []
+}
